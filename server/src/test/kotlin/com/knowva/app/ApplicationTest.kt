@@ -10,11 +10,29 @@ class ApplicationTest {
 
     @Test
     fun testRoot() = testApplication {
-        application {
+    application {
             module()
         }
+
         val response = client.get("/")
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals("Ktor: ${Greeting().greet()}", response.bodyAsText())
+
+        // The response should contain our service information
+        val responseText = response.bodyAsText()
+        assertTrue(responseText.contains("Knowva API"))
+        assertTrue(responseText.contains("healthy"))
+    }
+
+    @Test
+    fun testHealthCheck() = testApplication {
+    application {
+            module()
+        }
+
+        val response = client.get("/health")
+        assertEquals(HttpStatusCode.OK, response.status)
+
+        val responseText = response.bodyAsText()
+        assertTrue(responseText.contains("healthy"))
     }
 }
