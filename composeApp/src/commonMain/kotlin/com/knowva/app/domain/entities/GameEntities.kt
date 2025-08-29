@@ -1,5 +1,7 @@
 package com.knowva.app.domain.entities
 
+import androidx.compose.ui.graphics.Color
+
 /**
  * Core domain entities for the gamified trivia app
  */
@@ -25,13 +27,73 @@ data class User(
     val createdAt: String,
     val lastActiveAt: String,
     val isOnline: Boolean = false,
-    val isPremium: Boolean = false
+    val isPremium: Boolean = false,
+    // Enhanced gamification
+    val coins: Long = 0,
+    val gems: Long = 0,
+    val powerUps: Map<PowerUpType, Int> = emptyMap(),
+    val questProgress: List<Quest> = emptyList(),
+    val socialStats: SocialStats = SocialStats(),
+    val seasonalRank: SeasonalRank = SeasonalRank()
 ) {
     val winRate: Double
         get() = if (gamesPlayed > 0) (gamesWon.toDouble() / gamesPlayed.toDouble()) * 100 else 0.0
 
     val progressPercentage: Float
         get() = if (xpToNextLevel > 0) (currentXP.toFloat() / xpToNextLevel.toFloat()) else 0f
+
+    val totalWorth: Long
+        get() = coins + (gems * 10) // Gems are worth 10 coins each
+}
+
+data class SocialStats(
+    val friendsCount: Int = 0,
+    val challengesSent: Int = 0,
+    val challengesWon: Int = 0,
+    val helpGiven: Int = 0,
+    val helpReceived: Int = 0,
+    val guild: Guild? = null
+)
+
+data class Guild(
+    val id: String,
+    val name: String,
+    val description: String,
+    val memberCount: Int,
+    val level: Int,
+    val xp: Long,
+    val iconUrl: String?,
+    val isPublic: Boolean,
+    val perks: List<GuildPerk>
+)
+
+data class GuildPerk(
+    val type: GuildPerkType,
+    val value: Float,
+    val description: String
+)
+
+enum class GuildPerkType {
+    XP_BOOST, COIN_BOOST, STREAK_PROTECTION, EXTRA_LIVES, HINT_DISCOUNT
+}
+
+data class SeasonalRank(
+    val tier: RankTier = RankTier.BRONZE,
+    val division: Int = 5,
+    val points: Int = 0,
+    val seasonId: String = "",
+    val peakTier: RankTier = RankTier.BRONZE,
+    val peakDivision: Int = 5
+)
+
+enum class RankTier(val displayName: String, val color: Color, val icon: String) {
+    BRONZE("Bronze", Color(0xFFCD7F32), "🥉"),
+    SILVER("Silver", Color(0xFFC0C0C0), "🥈"),
+    GOLD("Gold", Color(0xFFFFD700), "🥇"),
+    PLATINUM("Platinum", Color(0xFFE5E4E2), "💎"),
+    DIAMOND("Diamond", Color(0xFFB9F2FF), "💠"),
+    MASTER("Master", Color(0xFF9370DB), "👑"),
+    GRANDMASTER("Grandmaster", Color(0xFFFF1493), "🔥")
 }
 
 data class UserPreferences(
@@ -264,7 +326,7 @@ data class ChallengeReward(
 )
 
 enum class RewardType {
-    XP, COINS, AVATAR, BADGE, POWER_UP
+    XP, COINS, GEMS, AVATAR, BADGE, POWER_UP, TITLE, CHEST, LOOT_BOX
 }
 
 data class PowerUp(
@@ -275,7 +337,11 @@ data class PowerUp(
     val type: PowerUpType,
     val duration: Int = 0, // seconds, 0 for instant
     val uses: Int = 1,
-    val coinCost: Long = 0
+    val coinCost: Long = 0,
+    val gemCost: Long = 0,
+    val rarity: RewardRarity = RewardRarity.COMMON,
+    val cooldown: Long = 0, // seconds
+    val isUnlocked: Boolean = true
 )
 
 enum class PowerUpType {
@@ -285,7 +351,12 @@ enum class PowerUpType {
     EXTRA_TIME,
     FREEZE_TIME,
     HINT,
-    DOUBLE_COINS
+    DOUBLE_COINS,
+    STREAK_SHIELD,
+    SECOND_CHANCE,
+    CATEGORY_BOOST,
+    LUCKY_GUESS,
+    MULTIPLIER_BOOST
 }
 
 data class WeeklyStats(
@@ -307,9 +378,164 @@ data class GameInvitation(
     val message: String? = null,
     val createdAt: String,
     val expiresAt: String,
-    val status: InvitationStatus = InvitationStatus.PENDING
+    val status: InvitationStatus = InvitationStatus.PENDING,
+    val wager: Wager? = null // Optional betting system
+)
+
+data class Wager(
+    val amount: Long,
+    val currency: WagerCurrency,
+    val isAccepted: Boolean = false
+)
+
+enum class WagerCurrency {
+    COINS, GEMS, XP
+}
+
+data class LeaderboardEntry(
+    val user: User,
+    val rank: Int,
+    val score: Long,
+    val gamesPlayed: Int,
+    val winRate: Double,
+    val changeFromLastWeek: Int = 0 // +/- position change
+)
+
+data class Tournament(
+    val id: String,
+    val name: String,
+    val description: String,
+    val category: GameCategory,
+    val difficulty: DifficultyLevel,
+    val entryFee: Long,
+    val prizePool: Long,
+    val maxParticipants: Int,
+    val currentParticipants: Int,
+    val startTime: String,
+    val endTime: String,
+    val status: TournamentStatus,
+    val prizes: List<TournamentPrize>,
+    val rules: TournamentRules
+)
+
+data class TournamentPrize(
+    val position: Int,
+    val rewards: List<Reward>
+)
+
+data class TournamentRules(
+    val questionsPerMatch: Int,
+    val timePerQuestion: Int,
+    val eliminationStyle: Boolean,
+    val powerUpsAllowed: Boolean
+)
+
+enum class TournamentStatus {
+    UPCOMING, REGISTRATION_OPEN, IN_PROGRESS, FINISHED, CANCELLED
+}
+
+data class Shop(
+    val powerUps: List<PowerUp>,
+    val cosmetics: List<CosmeticItem>,
+    val lootBoxes: List<LootBox>,
+    val featuredDeals: List<Deal>
+)
+
+data class CosmeticItem(
+    val id: String,
+    val name: String,
+    val description: String,
+    val type: CosmeticType,
+    val rarity: RewardRarity,
+    val coinCost: Long = 0,
+    val gemCost: Long = 0,
+    val imageUrl: String,
+    val isOwned: Boolean = false,
+    val isEquipped: Boolean = false
+)
+
+enum class CosmeticType {
+    AVATAR_FRAME, AVATAR_BADGE, PROFILE_THEME, ANSWER_ANIMATION, VICTORY_DANCE
+}
+
+data class LootBox(
+    val id: String,
+    val name: String,
+    val description: String,
+    val coinCost: Long,
+    val gemCost: Long,
+    val contents: List<LootBoxItem>,
+    val guaranteedRarity: RewardRarity,
+    val imageUrl: String
+)
+
+data class LootBoxItem(
+    val reward: Reward,
+    val dropChance: Float // 0.0 to 1.0
+)
+
+data class Deal(
+    val id: String,
+    val title: String,
+    val description: String,
+    val originalPrice: Long,
+    val discountPrice: Long,
+    val discountPercentage: Int,
+    val currency: WagerCurrency,
+    val item: Any, // Can be PowerUp, CosmeticItem, etc.
+    val expiresAt: String,
+    val isLimitedTime: Boolean = true
 )
 
 enum class InvitationStatus {
     PENDING, ACCEPTED, DECLINED, EXPIRED
+}
+
+data class Quest(
+    val id: String,
+    val title: String,
+    val description: String,
+    val type: QuestType,
+    val requirements: QuestRequirements,
+    val rewards: List<Reward>,
+    val progress: Int = 0,
+    val maxProgress: Int,
+    val isCompleted: Boolean = false,
+    val expiresAt: String? = null, // null for permanent quests
+    val difficulty: DifficultyLevel = DifficultyLevel.EASY
+) {
+    val progressPercentage: Float
+        get() = if (maxProgress > 0) (progress.toFloat() / maxProgress.toFloat()) * 100f else 0f
+}
+
+data class QuestRequirements(
+    val gamesWon: Int = 0,
+    val questionsAnswered: Int = 0,
+    val streakAchieved: Int = 0,
+    val categoriesPlayed: List<GameCategory> = emptyList(),
+    val difficultyLevel: DifficultyLevel? = null,
+    val socialAction: SocialActionType? = null
+)
+
+enum class QuestType {
+    DAILY, WEEKLY, SEASONAL, ACHIEVEMENT, SOCIAL
+}
+
+enum class SocialActionType {
+    CHALLENGE_FRIEND, HELP_FRIEND, JOIN_GUILD, INVITE_PLAYER
+}
+
+data class Reward(
+    val type: RewardType,
+    val amount: Long,
+    val description: String,
+    val rarity: RewardRarity = RewardRarity.COMMON
+)
+
+enum class RewardRarity(val color: Long, val multiplier: Float) {
+    COMMON(0xFF9E9E9E, 1.0f),
+    UNCOMMON(0xFF4CAF50, 1.2f),
+    RARE(0xFF2196F3, 1.5f),
+    EPIC(0xFF9C27B0, 2.0f),
+    LEGENDARY(0xFFFFD700, 3.0f)
 }

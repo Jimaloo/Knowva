@@ -78,6 +78,28 @@ fun HomeScreen(
                     )
                 }
 
+                // Currency Display
+                state.user?.let { user ->
+                    item {
+                        CurrencyDisplay(
+                            coins = user.coins,
+                            gems = user.gems,
+                            modifier = Modifier.fillMaxWidth(),
+                            showAnimations = true
+                        )
+                    }
+                }
+
+                // Seasonal Rank Display
+                state.user?.let { user ->
+                    item {
+                        RankDisplay(
+                            rank = user.seasonalRank,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
                 // Quick Actions
                 item {
                     QuickActionsSection(
@@ -90,6 +112,31 @@ fun HomeScreen(
                     )
                 }
 
+                // Power-Ups Inventory
+                state.user?.let { user ->
+                    if (user.powerUps.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "Your Power-Ups",
+                                style = TriviaTypography.TitleLarge,
+                                color = Color.White,
+                                modifier = Modifier.padding(vertical = Dimensions.SpacingSmall)
+                            )
+                        }
+
+                        item {
+                            PowerUpInventory(
+                                powerUps = user.powerUps,
+                                availablePowerUps = createMockPowerUps(),
+                                onPowerUpSelected = { powerUp ->
+                                    // Handle power-up selection
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+
                 // Daily Challenge
                 state.dailyChallenge?.let { challenge ->
                     item {
@@ -99,6 +146,30 @@ fun HomeScreen(
                                 viewModel.handleIntent(HomeIntent.OpenDailyChallenge)
                             }
                         )
+                    }
+                }
+
+                // Active Quests
+                state.user?.let { user ->
+                    if (user.questProgress.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "Active Quests",
+                                style = TriviaTypography.TitleLarge,
+                                color = Color.White,
+                                modifier = Modifier.padding(vertical = Dimensions.SpacingSmall)
+                            )
+                        }
+
+                        items(user.questProgress.take(3)) { quest ->
+                            QuestCard(
+                                quest = quest,
+                                onClick = {
+                                    // Handle quest click
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
 
@@ -166,6 +237,62 @@ fun HomeScreen(
             }
         }
     }
+}
+
+// Helper function for mock data
+private fun createMockPowerUps(): List<PowerUp> {
+    return listOf(
+        PowerUp(
+            id = "fifty_fifty",
+            name = "50/50",
+            description = "Remove two incorrect answers",
+            iconUrl = "",
+            type = PowerUpType.FIFTY_FIFTY,
+            coinCost = 50,
+            gemCost = 0,
+            rarity = RewardRarity.COMMON
+        ),
+        PowerUp(
+            id = "extra_time",
+            name = "Extra Time",
+            description = "Get 15 extra seconds",
+            iconUrl = "",
+            type = PowerUpType.EXTRA_TIME,
+            coinCost = 75,
+            gemCost = 0,
+            rarity = RewardRarity.UNCOMMON
+        ),
+        PowerUp(
+            id = "hint",
+            name = "Hint",
+            description = "Get a helpful hint",
+            iconUrl = "",
+            type = PowerUpType.HINT,
+            coinCost = 25,
+            gemCost = 0,
+            rarity = RewardRarity.COMMON
+        ),
+        PowerUp(
+            id = "double_xp",
+            name = "Double XP",
+            description = "Double XP for this game",
+            iconUrl = "",
+            type = PowerUpType.DOUBLE_XP,
+            coinCost = 0,
+            gemCost = 10,
+            rarity = RewardRarity.RARE
+        ),
+        PowerUp(
+            id = "skip_question",
+            name = "Skip",
+            description = "Skip this question",
+            iconUrl = "",
+            type = PowerUpType.SKIP_QUESTION,
+            coinCost = 100,
+            gemCost = 0,
+            rarity = RewardRarity.UNCOMMON
+        )
+    )
 }
 
 @Composable

@@ -129,6 +129,13 @@ object TriviaTypography {
         letterSpacing = 0.5.sp
     )
 
+    val LabelSmall = TextStyle(
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Medium,
+        lineHeight = 14.sp,
+        letterSpacing = 0.5.sp
+    )
+
     val CaptionLarge = TextStyle(
         fontSize = 12.sp,
         fontWeight = FontWeight.Normal,

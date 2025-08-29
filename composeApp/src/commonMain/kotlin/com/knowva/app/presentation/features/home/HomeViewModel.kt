@@ -130,7 +130,88 @@ class HomeViewModel(
             badges = listOf("First Win", "Streak Master", "Science Expert"),
             createdAt = "2024-01-15T10:00:00Z",
             lastActiveAt = "2024-01-20T15:30:00Z",
-            isOnline = true
+            isOnline = true,
+            // Enhanced gamification
+            coins = 2_450L,
+            gems = 127L,
+            powerUps = mapOf(
+                PowerUpType.FIFTY_FIFTY to 3,
+                PowerUpType.EXTRA_TIME to 2,
+                PowerUpType.HINT to 5,
+                PowerUpType.DOUBLE_XP to 1,
+                PowerUpType.SKIP_QUESTION to 2
+            ),
+            questProgress = createMockQuests(),
+            socialStats = SocialStats(
+                friendsCount = 23,
+                challengesSent = 45,
+                challengesWon = 32,
+                helpGiven = 18,
+                helpReceived = 12
+            ),
+            seasonalRank = SeasonalRank(
+                tier = RankTier.GOLD,
+                division = 3,
+                points = 1847,
+                seasonId = "season_2024_1",
+                peakTier = RankTier.GOLD,
+                peakDivision = 2
+            )
+        )
+    }
+
+    private fun createMockQuests(): List<Quest> {
+        return listOf(
+            Quest(
+                id = "quest_daily_1",
+                title = "Daily Streaker",
+                description = "Get a 5-question streak in any game mode",
+                type = QuestType.DAILY,
+                requirements = QuestRequirements(streakAchieved = 5),
+                rewards = listOf(
+                    Reward(RewardType.XP, 250, "250 XP bonus", RewardRarity.COMMON),
+                    Reward(RewardType.COINS, 100, "100 coins", RewardRarity.COMMON)
+                ),
+                progress = 3,
+                maxProgress = 5,
+                difficulty = DifficultyLevel.EASY,
+                expiresAt = "2024-01-21T23:59:59Z"
+            ),
+            Quest(
+                id = "quest_weekly_1",
+                title = "Science Master",
+                description = "Answer 25 science questions correctly this week",
+                type = QuestType.WEEKLY,
+                requirements = QuestRequirements(
+                    questionsAnswered = 25,
+                    categoriesPlayed = listOf(GameCategory.SCIENCE)
+                ),
+                rewards = listOf(
+                    Reward(RewardType.XP, 500, "500 XP bonus", RewardRarity.UNCOMMON),
+                    Reward(RewardType.GEMS, 25, "25 gems", RewardRarity.RARE),
+                    Reward(RewardType.POWER_UP, 2, "2 Hint power-ups", RewardRarity.UNCOMMON)
+                ),
+                progress = 18,
+                maxProgress = 25,
+                difficulty = DifficultyLevel.MEDIUM,
+                expiresAt = "2024-01-28T23:59:59Z"
+            ),
+            Quest(
+                id = "quest_achievement_1",
+                title = "Social Butterfly",
+                description = "Challenge 3 friends to games",
+                type = QuestType.SOCIAL,
+                requirements = QuestRequirements(socialAction = SocialActionType.CHALLENGE_FRIEND),
+                rewards = listOf(
+                    Reward(RewardType.XP, 300, "300 XP bonus", RewardRarity.COMMON),
+                    Reward(RewardType.COINS, 150, "150 coins", RewardRarity.COMMON),
+                    Reward(RewardType.BADGE, 1, "Social Butterfly badge", RewardRarity.RARE)
+                ),
+                progress = 1,
+                maxProgress = 3,
+                difficulty = DifficultyLevel.EASY,
+                isCompleted = false
+            )
         )
     }
 
