@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 import com.knowva.app.core.di.appModule
@@ -25,6 +26,8 @@ import com.knowva.app.presentation.ui.theme.*
 @Preview
 fun App() {
     val navController = rememberNavController()
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = currentBackStackEntry?.destination?.route
 
     MaterialTheme(
         colorScheme = darkColorScheme(
@@ -51,64 +54,151 @@ fun App() {
             extraLarge = TriviaShapes.ExtraLarge
         )
     ) {
-        NavHost(
-            navController = navController,
-            startDestination = "splash"
-        ) {
-            composable("splash") {
-                SplashScreen(
-                    onNavigateToAuth = { navController.navigate("auth") },
-                    onNavigateToHome = { navController.navigate("home") }
-                )
+        Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.systemBars),
+            bottomBar = {
+                if (shouldShowBottomBar(currentRoute)) {
+                    BottomNavigationBar(
+                        currentRoute = currentRoute,
+                        onNavigate = { route ->
+                            navController.navigate(route) {
+                                // Pop up to the home destination to avoid building up a large stack
+                                popUpTo("home") {
+                                    saveState = true
+                                }
+                                // Avoid multiple copies of the same destination
+                                launchSingleTop = true
+                                // Restore state when reselecting a previously selected item
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
             }
+        ) { paddingValues ->
+            NavHost(
+                navController = navController,
+                startDestination = "splash",
+                modifier = Modifier.padding(paddingValues)
+            ) {
+                composable("splash") {
+                    SplashScreen(
+                        onNavigateToAuth = { navController.navigate("auth") },
+                        onNavigateToHome = { navController.navigate("home") }
+                    )
+                }
 
-            composable("auth") {
-                AuthScreen(
-                    onNavigateToHome = { navController.navigate("home") },
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
+                composable("auth") {
+                    AuthScreen(
+                        onNavigateToHome = { navController.navigate("home") },
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
 
-            composable("home") {
-                val homeViewModel = koinInject<HomeViewModel>()
-                HomeScreen(
-                    viewModel = homeViewModel,
-                    onNavigateToQuickMatch = { navController.navigate("game") },
-                    onNavigateToProfile = { navController.navigate("profile") },
-                    onNavigateToLeaderboards = { navController.navigate("leaderboards") },
-                    onNavigateToAchievements = { navController.navigate("achievements") }
-                )
-            }
+                composable("home") {
+                    val homeViewModel = koinInject<HomeViewModel>()
+                    HomeScreen(
+                        viewModel = homeViewModel,
+                        onNavigateToQuickMatch = { navController.navigate("game") },
+                        onNavigateToProfile = { navController.navigate("profile") },
+                        onNavigateToLeaderboards = { navController.navigate("leaderboards") },
+                        onNavigateToAchievements = { navController.navigate("achievements") }
+                    )
+                }
 
-            composable("game") {
-                GameScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    onNavigateToHome = { navController.navigate("home") }
-                )
-            }
+                composable("game") {
+                    GameScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToHome = { navController.navigate("home") }
+                    )
+                }
 
-            composable("profile") {
-                ProfileScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
+                composable("profile") {
+                    ProfileScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
 
-            composable("leaderboards") {
-                LeaderboardScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
+                composable("leaderboards") {
+                    LeaderboardScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
 
-            composable("achievements") {
-                AchievementsScreen(
-                    onNavigateBack = { navController.popBackStack() }
-                )
+                composable("achievements") {
+                    AchievementsScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable("shop") {
+                    ShopScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
             }
         }
     }
 }
 
-// Placeholder screens - to be implemented
+@Composable
+fun BottomNavigationBar(
+    currentRoute: String?,
+    onNavigate: (String) -> Unit
+) {
+    NavigationBar(
+        containerColor = TriviaColors.Surface,
+        contentColor = TriviaColors.OnSurface
+    ) {
+        val items = listOf(
+            BottomNavItem("home", "Home", "🏠"),
+            BottomNavItem("game", "Play", "🎮"),
+            BottomNavItem("leaderboards", "Leaderboard", "🏆")
+        )
+
+        items.forEach { item ->
+            NavigationBarItem(
+                icon = {
+                    Text(
+                        text = item.icon,
+                        style = TriviaTypography.TitleMedium
+                    )
+                },
+                label = {
+                    Text(
+                        text = item.label,
+                        style = TriviaTypography.LabelMedium
+                    )
+                },
+                selected = currentRoute == item.route,
+                onClick = { onNavigate(item.route) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = TriviaColors.Primary,
+                    selectedTextColor = TriviaColors.Primary,
+                    unselectedIconColor = TriviaColors.OnSurfaceVariant,
+                    unselectedTextColor = TriviaColors.OnSurfaceVariant,
+                    indicatorColor = TriviaColors.Primary.copy(alpha = 0.2f)
+                )
+            )
+        }
+    }
+}
+
+data class BottomNavItem(
+    val route: String,
+    val label: String,
+    val icon: String
+)
+
+private fun shouldShowBottomBar(currentRoute: String?): Boolean {
+    return when (currentRoute) {
+        "splash", "auth" -> false
+        else -> true
+    }
+}
+
 @Composable
 private fun SplashScreen(
     onNavigateToAuth: () -> Unit,
@@ -289,6 +379,32 @@ private fun AchievementsScreen(
     ) {
         Text(
             text = "Achievements",
+            style = TriviaTypography.HeadlineLarge
+        )
+        Spacer(
+            modifier = Modifier.height(
+                Dimensions.SpacingLarge
+            )
+        )
+        Button(onClick = onNavigateBack) {
+            Text("Back")
+        }
+    }
+}
+
+@Composable
+private fun ShopScreen(
+    onNavigateBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(Dimensions.SpacingMedium),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Shop",
             style = TriviaTypography.HeadlineLarge
         )
         Spacer(

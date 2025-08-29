@@ -47,14 +47,6 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        TriviaColors.GradientStart,
-                        TriviaColors.GradientEnd
-                    )
-                )
-            )
     ) {
         if (state.isLoading) {
             CircularProgressIndicator(
@@ -65,9 +57,9 @@ fun HomeScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(Dimensions.SpacingMedium),
-                verticalArrangement = Arrangement.spacedBy(Dimensions.SpacingMedium)
+                verticalArrangement = Arrangement.spacedBy(Dimensions.SpacingLarge)
             ) {
-                // Welcome Section
+                // Welcome Section with Currency Display
                 item {
                     WelcomeSection(
                         user = state.user,
@@ -76,28 +68,6 @@ fun HomeScreen(
                             viewModel.handleIntent(HomeIntent.OpenProfile)
                         }
                     )
-                }
-
-                // Currency Display
-                state.user?.let { user ->
-                    item {
-                        CurrencyDisplay(
-                            coins = user.coins,
-                            gems = user.gems,
-                            modifier = Modifier.fillMaxWidth(),
-                            showAnimations = true
-                        )
-                    }
-                }
-
-                // Seasonal Rank Display
-                state.user?.let { user ->
-                    item {
-                        RankDisplay(
-                            rank = user.seasonalRank,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
                 }
 
                 // Quick Actions
@@ -112,32 +82,7 @@ fun HomeScreen(
                     )
                 }
 
-                // Power-Ups Inventory
-                state.user?.let { user ->
-                    if (user.powerUps.isNotEmpty()) {
-                        item {
-                            Text(
-                                text = "Your Power-Ups",
-                                style = TriviaTypography.TitleLarge,
-                                color = Color.White,
-                                modifier = Modifier.padding(vertical = Dimensions.SpacingSmall)
-                            )
-                        }
-
-                        item {
-                            PowerUpInventory(
-                                powerUps = user.powerUps,
-                                availablePowerUps = createMockPowerUps(),
-                                onPowerUpSelected = { powerUp ->
-                                    // Handle power-up selection
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-
-                // Daily Challenge
+                // Daily Challenge (only if exists)
                 state.dailyChallenge?.let { challenge ->
                     item {
                         DailyChallengeCard(
@@ -149,60 +94,10 @@ fun HomeScreen(
                     }
                 }
 
-                // Active Quests
-                state.user?.let { user ->
-                    if (user.questProgress.isNotEmpty()) {
-                        item {
-                            Text(
-                                text = "Active Quests",
-                                style = TriviaTypography.TitleLarge,
-                                color = Color.White,
-                                modifier = Modifier.padding(vertical = Dimensions.SpacingSmall)
-                            )
-                        }
-
-                        items(user.questProgress.take(3)) { quest ->
-                            QuestCard(
-                                quest = quest,
-                                onClick = {
-                                    // Handle quest click
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-
-                // Weekly Progress
+                // Weekly Progress (simplified)
                 state.weeklyStats?.let { weeklyStats ->
                     item {
-                        WeeklyProgressCard(
-                            weeklyStats = weeklyStats,
-                            onClick = {
-                                viewModel.handleIntent(HomeIntent.OpenLeaderboards)
-                            }
-                        )
-                    }
-                }
-
-                // Recent Achievements
-                if (state.recentAchievements.isNotEmpty()) {
-                    item {
-                        Text(
-                            text = "Recent Achievements",
-                            style = TriviaTypography.TitleLarge,
-                            color = Color.White,
-                            modifier = Modifier.padding(vertical = Dimensions.SpacingSmall)
-                        )
-                    }
-
-                    items(state.recentAchievements) { achievement ->
-                        AchievementCard(
-                            achievement = achievement,
-                            onClick = {
-                                viewModel.handleIntent(HomeIntent.OpenAchievements)
-                            }
-                        )
+                        SimpleStatsCard(weeklyStats = weeklyStats)
                     }
                 }
             }
@@ -239,62 +134,6 @@ fun HomeScreen(
     }
 }
 
-// Helper function for mock data
-private fun createMockPowerUps(): List<PowerUp> {
-    return listOf(
-        PowerUp(
-            id = "fifty_fifty",
-            name = "50/50",
-            description = "Remove two incorrect answers",
-            iconUrl = "",
-            type = PowerUpType.FIFTY_FIFTY,
-            coinCost = 50,
-            gemCost = 0,
-            rarity = RewardRarity.COMMON
-        ),
-        PowerUp(
-            id = "extra_time",
-            name = "Extra Time",
-            description = "Get 15 extra seconds",
-            iconUrl = "",
-            type = PowerUpType.EXTRA_TIME,
-            coinCost = 75,
-            gemCost = 0,
-            rarity = RewardRarity.UNCOMMON
-        ),
-        PowerUp(
-            id = "hint",
-            name = "Hint",
-            description = "Get a helpful hint",
-            iconUrl = "",
-            type = PowerUpType.HINT,
-            coinCost = 25,
-            gemCost = 0,
-            rarity = RewardRarity.COMMON
-        ),
-        PowerUp(
-            id = "double_xp",
-            name = "Double XP",
-            description = "Double XP for this game",
-            iconUrl = "",
-            type = PowerUpType.DOUBLE_XP,
-            coinCost = 0,
-            gemCost = 10,
-            rarity = RewardRarity.RARE
-        ),
-        PowerUp(
-            id = "skip_question",
-            name = "Skip",
-            description = "Skip this question",
-            iconUrl = "",
-            type = PowerUpType.SKIP_QUESTION,
-            coinCost = 100,
-            gemCost = 0,
-            rarity = RewardRarity.UNCOMMON
-        )
-    )
-}
-
 @Composable
 fun WelcomeSection(
     user: User?,
@@ -311,65 +150,72 @@ fun WelcomeSection(
                 containerColor = Color.White.copy(alpha = 0.1f)
             )
         ) {
-            Row(
-                modifier = Modifier
-                    .padding(Dimensions.SpacingLarge)
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.padding(Dimensions.SpacingLarge)
             ) {
-                // User Avatar Placeholder
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(TriviaColors.Primary.copy(alpha = 0.3f)),
-                    contentAlignment = Alignment.Center
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = user.displayName.take(2).uppercase(),
-                        style = TriviaTypography.TitleLarge,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(Dimensions.SpacingMedium))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Welcome back,",
-                        style = TriviaTypography.BodyLarge,
-                        color = Color.White.copy(alpha = 0.8f)
-                    )
-                    Text(
-                        text = user.displayName,
-                        style = TriviaTypography.HeadlineMedium,
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    userLevel?.let { level ->
+                    // User Avatar Placeholder
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .background(TriviaColors.Primary.copy(alpha = 0.3f)),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
-                            text = "Level ${level.currentLevel} • ${level.levelName}",
-                            style = TriviaTypography.LabelLarge,
+                            text = user.displayName.take(2).uppercase(),
+                            style = TriviaTypography.TitleLarge,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(Dimensions.SpacingMedium))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Welcome back,",
+                            style = TriviaTypography.BodyLarge,
                             color = Color.White.copy(alpha = 0.8f)
                         )
+                        Text(
+                            text = user.displayName,
+                            style = TriviaTypography.HeadlineMedium,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        userLevel?.let { level ->
+                            Text(
+                                text = "Level ${level.currentLevel}",
+                                style = TriviaTypography.LabelLarge,
+                                color = Color.White.copy(alpha = 0.8f)
+                            )
+                        }
                     }
                 }
 
-                // Arrow indicator
-                Box(
-                    modifier = Modifier
-                        .size(Dimensions.IconMedium)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
+                // Currency Display (integrated)
+                Spacer(modifier = Modifier.height(Dimensions.SpacingMedium))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Dimensions.SpacingMedium)
                 ) {
-                    Text(
-                        text = ">",
-                        color = Color.White.copy(alpha = 0.6f),
-                        style = TriviaTypography.TitleMedium
+                    CurrencyItem(
+                        amount = user.coins,
+                        icon = "🪙",
+                        color = TriviaColors.LevelGold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    CurrencyItem(
+                        amount = user.gems,
+                        icon = "💎",
+                        color = TriviaColors.Info,
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -726,5 +572,71 @@ fun AchievementCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun SimpleStatsCard(
+    weeklyStats: WeeklyStats
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = TriviaShapes.Medium,
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.1f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(Dimensions.SpacingMedium)
+        ) {
+            Text(
+                text = "This Week",
+                style = TriviaTypography.TitleMedium,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(Dimensions.SpacingSmall))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                SimpleStatItem(
+                    label = "Rank",
+                    value = "#${weeklyStats.rank}"
+                )
+                SimpleStatItem(
+                    label = "Games",
+                    value = weeklyStats.gamesPlayed.toString()
+                )
+                SimpleStatItem(
+                    label = "XP",
+                    value = weeklyStats.xpEarned.toString()
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SimpleStatItem(
+    label: String,
+    value: String
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = value,
+            style = TriviaTypography.TitleLarge,
+            color = Color.White,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = label,
+            style = TriviaTypography.LabelMedium,
+            color = Color.White.copy(alpha = 0.8f)
+        )
     }
 }
