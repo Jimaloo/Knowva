@@ -1,1 +1,0 @@
-web: ./gradlew server:run --no-daemon

@@ -1,4 +1,2 @@
 build:
-  command: ./gradlew server:build -x check -x test --no-daemon
-start:
-  command: ./gradlew server:run --no-daemon
+  provider: docker
