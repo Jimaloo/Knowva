@@ -1,0 +1,8 @@
+[phases.build]
+cmds = ["./gradlew server:build -x check -x test"]
+
+[phases.start]
+cmd = "./gradlew server:run"
+
+[variables]
+NIXPACKS_JDK_VERSION = "17"

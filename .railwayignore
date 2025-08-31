@@ -1,0 +1,24 @@
+# Android specific
+composeApp/
+iosApp/
+*.apk
+*.aab
+local.properties
+
+# IDE files
+.idea/
+*.iml
+*.iws
+
+# Build outputs
+build/
+*/build/
+.gradle/
+
+# Documentation
+README.md
+*.md
+
+# Git
+.git/
+.gitignore
