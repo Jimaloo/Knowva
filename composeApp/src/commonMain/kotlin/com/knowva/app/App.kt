@@ -1,14 +1,10 @@
 package com.knowva.app
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -16,11 +12,12 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
-import com.knowva.app.core.di.appModule
-import com.knowva.app.core.di.platformModule
 import com.knowva.app.presentation.features.home.HomeScreen
 import com.knowva.app.presentation.features.home.HomeViewModel
+import com.knowva.app.presentation.features.auth.AuthMainScreen
+import com.knowva.app.presentation.features.auth.ProfileScreen
 import com.knowva.app.presentation.ui.theme.*
+import com.knowva.app.data.repositories.AuthRepository
 
 @Composable
 @Preview
@@ -28,6 +25,13 @@ fun App() {
     val navController = rememberNavController()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
+    val authRepository = koinInject<AuthRepository>()
+    var isLoggedIn by remember { mutableStateOf(false) }
+
+    // Check authentication status
+    LaunchedEffect(Unit) {
+        isLoggedIn = authRepository.isLoggedIn()
+    }
 
     MaterialTheme(
         colorScheme = darkColorScheme(
@@ -80,20 +84,17 @@ fun App() {
         ) { paddingValues ->
             NavHost(
                 navController = navController,
-                startDestination = "splash",
+                startDestination = if (isLoggedIn) "home" else "auth",
                 modifier = Modifier.padding(paddingValues)
             ) {
-                composable("splash") {
-                    SplashScreen(
-                        onNavigateToAuth = { navController.navigate("auth") },
-                        onNavigateToHome = { navController.navigate("home") }
-                    )
-                }
-
                 composable("auth") {
-                    AuthScreen(
-                        onNavigateToHome = { navController.navigate("home") },
-                        onNavigateBack = { navController.popBackStack() }
+                    AuthMainScreen(
+                        onNavigateToHome = {
+                            isLoggedIn = true
+                            navController.navigate("home") {
+                                popUpTo("auth") { inclusive = true }
+                            }
+                        }
                     )
                 }
 
@@ -117,6 +118,12 @@ fun App() {
 
                 composable("profile") {
                     ProfileScreen(
+                        onNavigateToAuth = {
+                            isLoggedIn = false
+                            navController.navigate("auth") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        },
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }
@@ -194,87 +201,8 @@ data class BottomNavItem(
 
 private fun shouldShowBottomBar(currentRoute: String?): Boolean {
     return when (currentRoute) {
-        "splash", "auth" -> false
+        "auth" -> false
         else -> true
-    }
-}
-
-@Composable
-private fun SplashScreen(
-    onNavigateToAuth: () -> Unit,
-    onNavigateToHome: () -> Unit
-) {
-    // TODO: Implement splash screen
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(2000)
-        onNavigateToHome() // For now, go directly to home
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        TriviaColors.GradientStart,
-                        TriviaColors.GradientEnd
-                    )
-                )
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "KNOWVA",
-                style = TriviaTypography.HeadlineLarge,
-                color = Color.White
-            )
-            Spacer(
-                modifier = Modifier.height(
-                    Dimensions.SpacingMedium
-                )
-            )
-            Text(
-                text = "Trivia Challenge",
-                style = TriviaTypography.TitleLarge,
-                color = Color.White.copy(alpha = 0.8f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun AuthScreen(
-    onNavigateToHome: () -> Unit,
-    onNavigateBack: () -> Unit
-) {
-    // TODO: Implement auth screen
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(Dimensions.SpacingMedium),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Authentication",
-            style = TriviaTypography.HeadlineLarge
-        )
-        Spacer(
-            modifier = Modifier.height(
-                Dimensions.SpacingLarge
-            )
-        )
-        Button(
-            onClick = onNavigateToHome,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = TriviaColors.Primary
-            )
-        ) {
-            Text("Continue to Home")
-        }
     }
 }
 
@@ -307,33 +235,6 @@ private fun GameScreen(
             )
         ) {
             Text("Back to Home")
-        }
-    }
-}
-
-@Composable
-private fun ProfileScreen(
-    onNavigateBack: () -> Unit
-) {
-    // TODO: Implement profile screen
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(Dimensions.SpacingMedium),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Profile Screen",
-            style = TriviaTypography.HeadlineLarge
-        )
-        Spacer(
-            modifier = Modifier.height(
-                Dimensions.SpacingLarge
-            )
-        )
-        Button(onClick = onNavigateBack) {
-            Text("Back")
         }
     }
 }
